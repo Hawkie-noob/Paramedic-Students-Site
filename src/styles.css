@@ -30,12 +30,22 @@ header {
 }
 
 .logo {
+codex/initialize-dark-themed-react-website-for-paramedicstudents.c
   width: min(430px, 100%);
   height: auto;
   border-radius: 12px;
   border: 1px solid #1a5f5f;
   background: #071313;
   padding: 0.2rem;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: conic-gradient(from 45deg, #00a5a5, #00c26f, #008080);
+  display: grid;
+  place-items: center;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #001e1e;
 }
 
 nav {

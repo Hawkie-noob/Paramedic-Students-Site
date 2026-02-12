@@ -22,6 +22,7 @@ export default defineConfig([
       'react-refresh': reactRefresh,
     },
     rules: {
+codex/initialize-dark-themed-react-website-for-paramedicstudents.c
       'no-unused-vars': 'off',
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
     },

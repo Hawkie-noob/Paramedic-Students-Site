@@ -1,4 +1,5 @@
 import { NavLink, Route, Routes } from 'react-router-dom'
+codex/initialize-dark-themed-react-website-for-paramedicstudents.c
 import { useState } from 'react'
 import logo from './assets/ps-ecg-logo.svg'
 
@@ -24,7 +25,9 @@ const safeStorage = {
     }
   },
 }
+import { useMemo, useState } from 'react'
 
+const catchline = 'From lecture theatre to lights-and-sirens confidence.'
 const navItems = [
   ['/', 'Home'],
   ['/learning', 'Learning + Games'],
@@ -96,14 +99,18 @@ function Home() {
 }
 
 function Learning() {
+codex/initialize-dark-themed-react-website-for-paramedicstudents.c
   const [plays, setPlays] = useState(() => Number(safeStorage.get('freeGamePlays', '0')))
+  const [plays, setPlays] = useState(() => Number(localStorage.getItem('freeGamePlays') || 0))
   const locked = plays >= 3
 
   const play = () => {
     if (locked) return
     const next = plays + 1
     setPlays(next)
+codex/initialize-dark-themed-react-website-for-paramedicstudents.c
     safeStorage.set('freeGamePlays', String(next))
+    localStorage.setItem('freeGamePlays', String(next))
   }
 
   return (
@@ -270,6 +277,7 @@ function Legal() {
 }
 
 export default function App() {
+codex/initialize-dark-themed-react-website-for-paramedicstudents.c
   const [accepted, setAccepted] = useState(() => safeStorage.get('acceptedTerms', 'no') === 'yes')
 
   const acceptTerms = () => {
@@ -277,11 +285,24 @@ export default function App() {
     setAccepted(true)
   }
 
+  const [accepted, setAccepted] = useState(() => localStorage.getItem('acceptedTerms') === 'yes')
+
+  const acceptTerms = () => {
+    localStorage.setItem('acceptedTerms', 'yes')
+    setAccepted(true)
+  }
+
+  const title = useMemo(() => 'PS', [])
+
   return (
     <div className="app-shell">
       {!accepted && <TermsModal onAccept={acceptTerms} />}
       <header>
+codex/initialize-dark-themed-react-website-for-paramedicstudents.c
         <img className="logo" src={logo} alt="PS monogram blended with ECG rhythm" />
+        <div className="logo" aria-label="Paramedic Students logo">
+          <span>{title}</span>
+        </div>
         <div>
           <h1>paramedicstudents.com</h1>
           <p>{catchline}</p>
