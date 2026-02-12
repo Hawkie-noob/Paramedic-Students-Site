@@ -192,6 +192,26 @@ textarea {
   animation: fade-in-up 0.6s ease both;
 }
 
+
+.quiz-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-bottom: 0.8rem;
+}
+
+.inline-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-bottom: 0.8rem;
+}
+
+.inline-form input {
+  min-width: 240px;
+  flex: 1;
+}
+
 .vitals-output {
   margin-top: 0.9rem;
   padding: 0.75rem;

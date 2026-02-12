@@ -61,6 +61,30 @@ const scenarioSteps = [
   'Treatment priorities selected and pre-alert delivered to receiving hospital.',
 ]
 
+const ecgQuestions = [
+  {
+    rhythm: 'Narrow-complex tachycardia at 180 bpm, regular rhythm',
+    answer: 'SVT',
+    options: ['AF', 'SVT', 'Sinus bradycardia'],
+  },
+  {
+    rhythm: 'Chaotic waveform with no organised QRS complexes',
+    answer: 'VF',
+    options: ['VF', 'Asystole', 'Normal sinus rhythm'],
+  },
+  {
+    rhythm: 'Slow rhythm with P before every QRS at 48 bpm',
+    answer: 'Sinus bradycardia',
+    options: ['Sinus bradycardia', 'SVT', 'VT'],
+  },
+]
+
+const anatomyPrompts = [
+  { prompt: 'The _____ is the main muscle of respiration.', answer: 'diaphragm' },
+  { prompt: 'The _____ artery is commonly used for pulse checks in adults.', answer: 'carotid' },
+  { prompt: 'The _____ carries oxygenated blood from lungs to left atrium.', answer: 'pulmonary vein' },
+]
+
 function TermsModal({ onAccept }) {
   return (
     <div className="modal-overlay">
@@ -100,11 +124,6 @@ function Home() {
         <p>
           <strong>Catchline:</strong> {catchline}
         </p>
-        <ul>
-          <li>Dark mode interface with neurodivergent-friendly learning pathways.</li>
-          <li>QAS-focused protocol revision and scenario-based drills.</li>
-          <li>University leaderboard challenges, referral rewards, and cohort sharing tools.</li>
-        </ul>
       </SectionCard>
     </>
   )
@@ -134,9 +153,80 @@ function ClinicalCase({ onFinish }) {
   )
 }
 
+function EcgDrill() {
+  const [questionIndex, setQuestionIndex] = useState(0)
+  const [score, setScore] = useState(0)
+  const [feedback, setFeedback] = useState('')
+  const question = ecgQuestions[questionIndex]
+
+  const chooseAnswer = (option) => {
+    const isCorrect = option === question.answer
+    setFeedback(isCorrect ? 'Correct rhythm identification.' : `Not quite. Correct answer: ${question.answer}.`)
+    if (isCorrect) setScore(score + 1)
+  }
+
+  const nextQuestion = () => {
+    setFeedback('')
+    setQuestionIndex((questionIndex + 1) % ecgQuestions.length)
+  }
+
+  return (
+    <article className="card fade-in-up">
+      <h3>ECG Recognition Drill</h3>
+      <p>{question.rhythm}</p>
+      <div className="quiz-options">
+        {question.options.map((option) => (
+          <button key={option} onClick={() => chooseAnswer(option)}>
+            {option}
+          </button>
+        ))}
+      </div>
+      <p className="meta-line">Score this session: {score}</p>
+      {feedback && <p className="meta-line">{feedback}</p>}
+      <button onClick={nextQuestion}>Next Rhythm</button>
+    </article>
+  )
+}
+
+function AnatomyChallenge() {
+  const [promptIndex, setPromptIndex] = useState(0)
+  const [guess, setGuess] = useState('')
+  const [result, setResult] = useState('')
+  const prompt = anatomyPrompts[promptIndex]
+
+  const submitGuess = (event) => {
+    event.preventDefault()
+    const isCorrect = guess.trim().toLowerCase() === prompt.answer
+    setResult(isCorrect ? 'Correct.' : `Try again. Expected answer: ${prompt.answer}`)
+  }
+
+  const nextPrompt = () => {
+    setPromptIndex((promptIndex + 1) % anatomyPrompts.length)
+    setGuess('')
+    setResult('')
+  }
+
+  return (
+    <article className="card fade-in-up">
+      <h3>Anatomy Fill-the-Blank</h3>
+      <p>{prompt.prompt}</p>
+      <form className="inline-form" onSubmit={submitGuess}>
+        <input
+          value={guess}
+          onChange={(event) => setGuess(event.target.value)}
+          placeholder="Enter your answer"
+        />
+        <button type="submit">Check</button>
+      </form>
+      {result && <p className="meta-line">{result}</p>}
+      <button onClick={nextPrompt}>Next Prompt</button>
+    </article>
+  )
+}
+
 function Learning() {
   const [sessionsCompleted, setSessionsCompleted] = usePersistentState('sessionsCompleted', 0)
-  const [scenarioVisible, setScenarioVisible] = useState(false)
+  const [activeModule, setActiveModule] = useState('case')
   const [vitals, setVitals] = useState(null)
 
   const generateVitals = () => {
@@ -150,35 +240,44 @@ function Learning() {
 
   const saveCompletion = () => {
     setSessionsCompleted(sessionsCompleted + 1)
-    setScenarioVisible(false)
+    setActiveModule('vitals')
+  }
+
+  const openModule = (moduleId) => {
+    setActiveModule(moduleId)
+    if (moduleId === 'vitals') generateVitals()
   }
 
   return (
     <>
       <SectionCard title="Clinical Dashboard">
         <p className="meta-line">Sessions Completed: {sessionsCompleted}</p>
-        <Dashboard onBeginScenario={() => setScenarioVisible(true)} onGenerateVitals={generateVitals} />
+        <Dashboard onSelectModule={openModule} />
       </SectionCard>
 
-      {scenarioVisible && <ClinicalCase onFinish={saveCompletion} />}
+      {activeModule === 'case' && <ClinicalCase onFinish={saveCompletion} />}
+      {activeModule === 'ecg' && <EcgDrill />}
+      {activeModule === 'anatomy' && <AnatomyChallenge />}
 
-      <SectionCard title="Vitals Simulator">
-        <p>Generate vitals and decide whether this patient appears stable, compensating, or critical.</p>
-        <button onClick={generateVitals}>Generate New Readings</button>
-        {vitals && (
-          <div className="vitals-output fade-in-up">
-            <p>
-              <strong>HR:</strong> {vitals.hr} bpm
-            </p>
-            <p>
-              <strong>BP:</strong> {vitals.bp} mmHg
-            </p>
-            <p>
-              <strong>SpO₂:</strong> {vitals.spo2}%
-            </p>
-          </div>
-        )}
-      </SectionCard>
+      {(activeModule === 'vitals' || vitals) && (
+        <SectionCard title="Vitals Simulator">
+          <p>Generate vitals and decide whether this patient appears stable, compensating, or critical.</p>
+          <button onClick={generateVitals}>Generate New Readings</button>
+          {vitals && (
+            <div className="vitals-output fade-in-up">
+              <p>
+                <strong>HR:</strong> {vitals.hr} bpm
+              </p>
+              <p>
+                <strong>BP:</strong> {vitals.bp} mmHg
+              </p>
+              <p>
+                <strong>SpO₂:</strong> {vitals.spo2}%
+              </p>
+            </div>
+          )}
+        </SectionCard>
+      )}
     </>
   )
 }
