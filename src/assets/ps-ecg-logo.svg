@@ -15,7 +15,6 @@
     </filter>
   </defs>
 
-  <rect width="1200" height="320" rx="28" fill="#071313"/>
 
   <g transform="translate(70 50)" fill="none" stroke="url(#tealGreen)" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" filter="url(#softGlow)">
     <path d="M40 20h170c48 0 76 24 76 62s-26 62-80 62H110"/>

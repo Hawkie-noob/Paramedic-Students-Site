@@ -33,32 +33,23 @@ const clinicalModules = [
   },
 ]
 
-export default function Dashboard({ onBeginScenario, onGenerateVitals }) {
+export default function Dashboard({ onSelectModule }) {
   return (
     <section className="dashboard-grid" aria-label="Clinical learning dashboard">
-      {clinicalModules.map((module, index) => {
-        const onClick =
-          module.id === 'case'
-            ? onBeginScenario
-            : module.id === 'vitals'
-              ? onGenerateVitals
-              : undefined
-
-        return (
-          <article
-            key={module.id}
-            className="module-card fade-in-up"
-            style={{ animationDelay: `${index * 90}ms` }}
-          >
-            <div className="module-art" aria-hidden="true">
-              <span>{module.icon}</span>
-            </div>
-            <h3>{module.title}</h3>
-            <p>{module.description}</p>
-            <button onClick={onClick}>{module.cta}</button>
-          </article>
-        )
-      })}
+      {clinicalModules.map((module, index) => (
+        <article
+          key={module.id}
+          className="module-card fade-in-up"
+          style={{ animationDelay: `${index * 90}ms` }}
+        >
+          <div className="module-art" aria-hidden="true">
+            <span>{module.icon}</span>
+          </div>
+          <h3>{module.title}</h3>
+          <p>{module.description}</p>
+          <button onClick={() => onSelectModule(module.id)}>{module.cta}</button>
+        </article>
+      ))}
     </section>
   )
 }
