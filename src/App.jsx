@@ -1,5 +1,5 @@
 import { NavLink, Route, Routes } from 'react-router-dom'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import logo from './assets/ps-ecg-logo.svg'
 import Dashboard from './Dashboard'
 
@@ -113,19 +113,51 @@ function SectionCard({ title, children }) {
   )
 }
 
+function VitalsMonitor() {
+  const [wave, setWave] = useState(() =>
+    Array.from({ length: 120 }, (_, index) => (index % 24 === 0 ? 34 : 52)),
+  )
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setWave((previous) => {
+        const next = previous.slice(1)
+        const beatPattern = [52, 52, 40, 15, 62, 50, 49, 52, 52, 52, 51, 50]
+        const randomNoise = Math.floor(Math.random() * 3) - 1
+        const source = beatPattern[(Math.floor(Date.now() / 90)) % beatPattern.length]
+        next.push(Math.max(8, Math.min(64, source + randomNoise)))
+        return next
+      })
+    }, 85)
+
+    return () => clearInterval(interval)
+  }, [])
+
+  const points = wave.map((value, index) => `${index * 5},${value}`).join(' ')
+
+  return (
+    <aside className="vitals-monitor">
+      <h3>Live Monitor</h3>
+      <svg viewBox="0 0 620 80" preserveAspectRatio="none" aria-label="Real-time ECG waveform">
+        <polyline className="monitor-grid" points="0,40 620,40" />
+        <polyline className="monitor-wave" points={points} />
+      </svg>
+      <p className="meta-line">Lead II simulation for practice visualisation only.</p>
+    </aside>
+  )
+}
+
 function Home() {
   return (
-    <>
-      <SectionCard title="Welcome to paramedicstudents.com">
-        <p>
-          Built for Australian student paramedics, this platform combines evidence-based learning,
-          practical placement preparation, and a student-first store in one secure hub.
-        </p>
-        <p>
-          <strong>Catchline:</strong> {catchline}
-        </p>
-      </SectionCard>
-    </>
+    <SectionCard title="Welcome to paramedicstudents.com">
+      <p>
+        Built for Australian student paramedics, this platform combines evidence-based learning,
+        practical placement preparation, and a student-first store in one secure hub.
+      </p>
+      <p>
+        <strong>Catchline:</strong> {catchline}
+      </p>
+    </SectionCard>
   )
 }
 
@@ -249,36 +281,39 @@ function Learning() {
   }
 
   return (
-    <>
-      <SectionCard title="Clinical Dashboard">
-        <p className="meta-line">Sessions Completed: {sessionsCompleted}</p>
-        <Dashboard onSelectModule={openModule} />
-      </SectionCard>
-
-      {activeModule === 'case' && <ClinicalCase onFinish={saveCompletion} />}
-      {activeModule === 'ecg' && <EcgDrill />}
-      {activeModule === 'anatomy' && <AnatomyChallenge />}
-
-      {(activeModule === 'vitals' || vitals) && (
-        <SectionCard title="Vitals Simulator">
-          <p>Generate vitals and decide whether this patient appears stable, compensating, or critical.</p>
-          <button onClick={generateVitals}>Generate New Readings</button>
-          {vitals && (
-            <div className="vitals-output fade-in-up">
-              <p>
-                <strong>HR:</strong> {vitals.hr} bpm
-              </p>
-              <p>
-                <strong>BP:</strong> {vitals.bp} mmHg
-              </p>
-              <p>
-                <strong>SpO₂:</strong> {vitals.spo2}%
-              </p>
-            </div>
-          )}
+    <div className="learning-layout">
+      <section className="learning-main">
+        <SectionCard title="Clinical Dashboard">
+          <p className="meta-line">Sessions Completed: {sessionsCompleted}</p>
+          <Dashboard onSelectModule={openModule} />
         </SectionCard>
-      )}
-    </>
+
+        {activeModule === 'case' && <ClinicalCase onFinish={saveCompletion} />}
+        {activeModule === 'ecg' && <EcgDrill />}
+        {activeModule === 'anatomy' && <AnatomyChallenge />}
+
+        {(activeModule === 'vitals' || vitals) && (
+          <SectionCard title="Vitals Simulator">
+            <p>Generate vitals and decide whether this patient appears stable, compensating, or critical.</p>
+            <button onClick={generateVitals}>Generate New Readings</button>
+            {vitals && (
+              <div className="vitals-output fade-in-up">
+                <p>
+                  <strong>HR:</strong> {vitals.hr} bpm
+                </p>
+                <p>
+                  <strong>BP:</strong> {vitals.bp} mmHg
+                </p>
+                <p>
+                  <strong>SpO₂:</strong> {vitals.spo2}%
+                </p>
+              </div>
+            )}
+          </SectionCard>
+        )}
+      </section>
+      <VitalsMonitor />
+    </div>
   )
 }
 
@@ -394,11 +429,14 @@ export default function App() {
       <header className="top-nav">
         <div className="brand-wrap">
           <img className="logo" src={logo} alt="PS monogram blended with ECG rhythm" />
-          <h1>paramedicstudents.com</h1>
         </div>
         <nav>
-          {navItems.map(([to, label]) => (
-            <NavLink key={to} to={to}>
+          {navItems.map(([to, label], index) => (
+            <NavLink
+              key={to}
+              to={to}
+              className={({ isActive }) => `${index === 0 ? 'nav-home' : ''} ${index === 1 ? 'nav-learning' : ''} ${isActive ? 'active' : ''}`.trim()}
+            >
               {label}
             </NavLink>
           ))}
