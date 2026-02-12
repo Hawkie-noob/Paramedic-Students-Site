@@ -1,9 +1,8 @@
 import { NavLink, Route, Routes } from 'react-router-dom'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import logo from './assets/ps-ecg-logo.svg'
 
 const catchline = 'From lecture theatre to lights-and-sirens confidence.'
-
 
 const safeStorage = {
   get(key, fallback) {
@@ -25,6 +24,26 @@ const safeStorage = {
   },
 }
 
+function usePersistentState(key, initialValue) {
+  const [value, setValue] = useState(() => {
+    const raw = safeStorage.get(key, null)
+    if (raw === null) return initialValue
+
+    try {
+      return JSON.parse(raw)
+    } catch {
+      return initialValue
+    }
+  })
+
+  const persist = (nextValue) => {
+    setValue(nextValue)
+    safeStorage.set(key, JSON.stringify(nextValue))
+  }
+
+  return [value, persist]
+}
+
 const navItems = [
   ['/', 'Home'],
   ['/learning', 'Learning + Games'],
@@ -35,14 +54,32 @@ const navItems = [
   ['/legal', 'Legal + Security'],
 ]
 
+const games = [
+  {
+    id: 'ecg',
+    name: 'ECG Time Challenge',
+    detail: 'Rapid rhythm recognition, pathology clues, and timed scoring.',
+  },
+  {
+    id: 'crossword',
+    name: 'Clinical Crossword',
+    detail: 'Drug classes, anatomy, trauma patterns, and terminology drills.',
+  },
+  {
+    id: 'hangman',
+    name: 'Paramedic Hangman',
+    detail: 'Airway tools, abbreviations, and emergency care language.',
+  },
+]
+
 function TermsModal({ onAccept }) {
   return (
     <div className="modal-overlay">
       <div className="modal-card">
         <h2>Accept Terms Before Continuing</h2>
         <p>
-          ParamedicStudents.com is a peer-to-peer study aid for Australian paramedic students.
-          It is not an official Queensland Ambulance Service (QAS) or government resource.
+          ParamedicStudents.com is a peer-to-peer study aid for Australian paramedic students. It
+          is not an official Queensland Ambulance Service (QAS) or government resource.
         </p>
         <p>
           All users must cross-check content with current QAS Clinical Practice Guidelines,
@@ -96,36 +133,47 @@ function Home() {
 }
 
 function Learning() {
-  const [plays, setPlays] = useState(() => Number(safeStorage.get('freeGamePlays', '0')))
-  const locked = plays >= 3
+  const [gamePlays, setGamePlays] = usePersistentState('gamePlays', {})
 
-  const play = () => {
-    if (locked) return
-    const next = plays + 1
-    setPlays(next)
-    safeStorage.set('freeGamePlays', String(next))
+  const launchGame = (gameId) => {
+    const currentPlays = gamePlays[gameId] ?? 0
+    if (currentPlays >= 3) return
+
+    setGamePlays({
+      ...gamePlays,
+      [gameId]: currentPlays + 1,
+    })
   }
+
+  const totalFreePlays = Object.values(gamePlays).reduce((sum, count) => sum + Number(count), 0)
 
   return (
     <>
       <SectionCard title="Learning Arcade">
         <p>
-          Free access includes the first <strong>3 plays/levels</strong> across addictive educational
-          mini-games inspired by popular mobile gameplay loops.
+          Each game includes <strong>3 free plays</strong> before membership upgrade prompts.
+          Progress is saved to this device so you can track your free attempts.
         </p>
-        <div className="game-box">
-          <h3>ECG Time Challenge</h3>
-          <p>Rapid rhythm recognition, underlying pathology interpretation, and timed scoring.</p>
-          <button disabled={locked} onClick={play}>
-            {locked ? 'Upgrade Required' : `Play Free (${Math.max(0, 3 - plays)} left)`}
-          </button>
+
+        <div className="game-grid cards-grid">
+          {games.map((game) => {
+            const plays = gamePlays[game.id] ?? 0
+            const locked = plays >= 3
+
+            return (
+              <article key={game.id} className="game-box">
+                <h3>{game.name}</h3>
+                <p>{game.detail}</p>
+                <p className="meta-line">Free plays used: {plays}/3</p>
+                <button disabled={locked} onClick={() => launchGame(game.id)}>
+                  {locked ? 'Upgrade to Continue' : 'Launch Game'}
+                </button>
+              </article>
+            )
+          })}
         </div>
-        <div className="game-grid">
-          <div>Crosswords: drug classes, anatomy, and pathophysiology.</div>
-          <div>Hangman: abbreviations, airway tools, and trauma terms.</div>
-          <div>Anatomy Fill-the-Blanks with dyslexia-friendly options.</div>
-          <div>Scenario Sprint with escalating complexity and hints.</div>
-        </div>
+
+        <p className="meta-line">Total free plays used across arcade: {totalFreePlays}</p>
       </SectionCard>
 
       <SectionCard title="Leaderboard + University Insights">
@@ -139,32 +187,97 @@ function Learning() {
 }
 
 function Membership() {
+  const [members, setMembers] = usePersistentState('members', [])
+  const [form, setForm] = useState({
+    name: '',
+    email: '',
+    university: '',
+    campus: '',
+    referral: '',
+  })
+
+  const submitMember = (event) => {
+    event.preventDefault()
+
+    if (!form.name || !form.email || !form.university) return
+
+    const nextMembers = [
+      {
+        ...form,
+        joinedAt: new Date().toISOString(),
+      },
+      ...members,
+    ]
+
+    setMembers(nextMembers)
+    setForm({ name: '', email: '', university: '', campus: '', referral: '' })
+  }
+
+  const topUniversity = useMemo(() => {
+    if (!members.length) return 'No sign-ups yet'
+
+    const counts = members.reduce((acc, member) => {
+      const key = member.university
+      acc[key] = (acc[key] ?? 0) + 1
+      return acc
+    }, {})
+
+    return Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0]
+  }, [members])
+
   return (
     <>
       <SectionCard title="Sign Up + Membership Database">
-        <form className="form-grid">
+        <form className="form-grid" onSubmit={submitMember}>
           <label>
             Full Name
-            <input placeholder="e.g. Olivia Smith" />
+            <input
+              value={form.name}
+              onChange={(event) => setForm({ ...form, name: event.target.value })}
+              placeholder="e.g. Olivia Smith"
+            />
           </label>
           <label>
             Email
-            <input type="email" placeholder="name@example.com" />
+            <input
+              type="email"
+              value={form.email}
+              onChange={(event) => setForm({ ...form, email: event.target.value })}
+              placeholder="name@example.com"
+            />
           </label>
           <label>
             University
-            <input placeholder="e.g. QUT" />
+            <input
+              value={form.university}
+              onChange={(event) => setForm({ ...form, university: event.target.value })}
+              placeholder="e.g. QUT"
+            />
           </label>
           <label>
             Campus / Location
-            <input placeholder="e.g. Kelvin Grove, QLD" />
+            <input
+              value={form.campus}
+              onChange={(event) => setForm({ ...form, campus: event.target.value })}
+              placeholder="e.g. Kelvin Grove, QLD"
+            />
           </label>
           <label>
             Referral Code
-            <input placeholder="Optional referral code" />
+            <input
+              value={form.referral}
+              onChange={(event) => setForm({ ...form, referral: event.target.value })}
+              placeholder="Optional referral code"
+            />
           </label>
-          <button type="button">Create Account</button>
+          <button type="submit">Create Account</button>
         </form>
+
+        <div className="stats-row">
+          <p>Local sign-ups tracked: {members.length}</p>
+          <p>Top university (local sample): {topUniversity}</p>
+        </div>
+
         <p>
           Referral rewards: if a referred member upgrades to paid, both students earn credits
           towards personalised equipment and placement essentials.
@@ -208,6 +321,33 @@ function Store() {
 }
 
 function Community() {
+  const [resources, setResources] = usePersistentState('cohortResources', [])
+  const [housing, setHousing] = usePersistentState('housingListings', [])
+  const [resourceForm, setResourceForm] = useState({ title: '', unit: '' })
+  const [housingForm, setHousingForm] = useState({ suburb: '', details: '' })
+
+  const addResource = (event) => {
+    event.preventDefault()
+    if (!resourceForm.title || !resourceForm.unit) return
+
+    setResources([
+      { ...resourceForm, createdAt: new Date().toISOString() },
+      ...resources,
+    ])
+    setResourceForm({ title: '', unit: '' })
+  }
+
+  const addHousing = (event) => {
+    event.preventDefault()
+    if (!housingForm.suburb || !housingForm.details) return
+
+    setHousing([
+      { ...housingForm, createdAt: new Date().toISOString() },
+      ...housing,
+    ])
+    setHousingForm({ suburb: '', details: '' })
+  }
+
   return (
     <>
       <SectionCard title="Cohort Library + Subject Uploads">
@@ -215,31 +355,121 @@ function Community() {
           Students can upload subject outlines, notes, and revision tools to keep resources current
           with curriculum changes.
         </p>
+
+        <form className="form-grid" onSubmit={addResource}>
+          <label>
+            Resource title
+            <input
+              value={resourceForm.title}
+              onChange={(event) => setResourceForm({ ...resourceForm, title: event.target.value })}
+              placeholder="e.g. Trauma Assessment Summary"
+            />
+          </label>
+          <label>
+            Unit / subject
+            <input
+              value={resourceForm.unit}
+              onChange={(event) => setResourceForm({ ...resourceForm, unit: event.target.value })}
+              placeholder="e.g. PARA201"
+            />
+          </label>
+          <button type="submit">Share Resource</button>
+        </form>
+
+        <ul className="list-box">
+          {resources.slice(0, 3).map((resource) => (
+            <li key={`${resource.title}-${resource.createdAt}`}>
+              <strong>{resource.title}</strong> — {resource.unit}
+            </li>
+          ))}
+          {!resources.length && <li>No resources shared yet.</li>}
+        </ul>
       </SectionCard>
+
       <SectionCard title="Placement Housing Swap">
         <p>
           Share rooms for rent, short-stay swaps, and placement accommodation leads with safety
           checklists and verification badges.
         </p>
+
+        <form className="form-grid" onSubmit={addHousing}>
+          <label>
+            Suburb / location
+            <input
+              value={housingForm.suburb}
+              onChange={(event) => setHousingForm({ ...housingForm, suburb: event.target.value })}
+              placeholder="e.g. Townsville"
+            />
+          </label>
+          <label>
+            Listing details
+            <textarea
+              rows="3"
+              value={housingForm.details}
+              onChange={(event) => setHousingForm({ ...housingForm, details: event.target.value })}
+              placeholder="Room available near placement hub..."
+            />
+          </label>
+          <button type="submit">Post Listing</button>
+        </form>
+
+        <ul className="list-box">
+          {housing.slice(0, 3).map((listing) => (
+            <li key={`${listing.suburb}-${listing.createdAt}`}>
+              <strong>{listing.suburb}</strong> — {listing.details}
+            </li>
+          ))}
+          {!housing.length && <li>No housing posts yet.</li>}
+        </ul>
       </SectionCard>
     </>
   )
 }
 
 function Feedback() {
+  const [feedbackEntries, setFeedbackEntries] = usePersistentState('feedbackEntries', [])
+  const [feedbackText, setFeedbackText] = useState('')
+
+  const submitFeedback = (event) => {
+    event.preventDefault()
+    if (!feedbackText.trim()) return
+
+    setFeedbackEntries([
+      {
+        text: feedbackText.trim(),
+        createdAt: new Date().toISOString(),
+      },
+      ...feedbackEntries,
+    ])
+
+    setFeedbackText('')
+  }
+
   return (
     <SectionCard title="Feedback + Sharing">
-      <form className="form-grid">
+      <form className="form-grid" onSubmit={submitFeedback}>
         <label>
           Your feedback
-          <textarea rows="4" placeholder="Tell us what would improve your learning" />
+          <textarea
+            rows="4"
+            value={feedbackText}
+            onChange={(event) => setFeedbackText(event.target.value)}
+            placeholder="Tell us what would improve your learning"
+          />
         </label>
         <label>
           Share link with mates
           <input value="https://paramedicstudents.com/signup?ref=YOURCODE" readOnly />
         </label>
-        <button type="button">Submit Feedback</button>
+        <button type="submit">Submit Feedback</button>
       </form>
+
+      <ul className="list-box">
+        {feedbackEntries.slice(0, 3).map((entry) => (
+          <li key={entry.createdAt}>{entry.text}</li>
+        ))}
+        {!feedbackEntries.length && <li>No feedback submitted yet.</li>}
+      </ul>
     </SectionCard>
   )
 }
