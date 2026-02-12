@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 320" role="img" aria-labelledby="title desc">
+  <title id="title">Paramedic Students PS ECG Monogram</title>
+  <desc id="desc">Minimal PS monogram flowing into an ECG rhythm in teal and green.</desc>
+  <defs>
+    <linearGradient id="tealGreen" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#008080"/>
+      <stop offset="100%" stop-color="#22bb66"/>
+    </linearGradient>
+    <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="2.5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="320" rx="28" fill="#071313"/>
+
+  <g transform="translate(70 50)" fill="none" stroke="url(#tealGreen)" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" filter="url(#softGlow)">
+    <path d="M40 20h170c48 0 76 24 76 62s-26 62-80 62H110"/>
+    <path d="M40 20v200"/>
+
+    <path d="M420 20H300v200h120c54 0 90-28 90-74 0-42-28-68-90-68h-56"/>
+
+    <path d="M560 140h86l20-28 22 90 26-160 30 202 26-104 20 0h100" stroke-width="14"/>
+  </g>
+</svg>
