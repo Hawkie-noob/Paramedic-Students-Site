@@ -30,22 +30,12 @@ header {
 }
 
 .logo {
-codex/initialize-dark-themed-react-website-for-paramedicstudents.c
   width: min(430px, 100%);
   height: auto;
   border-radius: 12px;
   border: 1px solid #1a5f5f;
   background: #071313;
   padding: 0.2rem;
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  background: conic-gradient(from 45deg, #00a5a5, #00c26f, #008080);
-  display: grid;
-  place-items: center;
-  font-size: 1.5rem;
-  font-weight: 800;
-  color: #001e1e;
 }
 
 nav {
@@ -81,7 +71,9 @@ main {
   background: rgba(10, 35, 35, 0.8);
 }
 
-h1, h2, h3 {
+h1,
+h2,
+h3 {
   margin-top: 0;
 }
 
@@ -119,6 +111,7 @@ textarea {
   padding: 0.55rem;
 }
 
+.cards-grid,
 .game-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -132,6 +125,25 @@ textarea {
   border-radius: 10px;
   padding: 0.8rem;
   background: #0a2d2d;
+}
+
+.meta-line {
+  color: #8fe4c0;
+  font-size: 0.92rem;
+}
+
+.stats-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 0.4rem 0;
+}
+
+.list-box {
+  margin: 0.8rem 0 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 0.4rem;
 }
 
 .modal-overlay {
@@ -149,4 +161,15 @@ textarea {
   border: 1px solid #146767;
   border-radius: 14px;
   padding: 1rem;
+}
+
+@media (max-width: 700px) {
+  header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .logo {
+    width: 100%;
+  }
 }
